@@ -1,14 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 import time
-import joblib
-import pandas as pd
 
 app = Flask(__name__)
-
-# Load the pre-trained model and label encoders
-model = joblib.load('./models/activity_classification_model.pkl')
-gender_encoder = joblib.load('./models/gender_label_encoder.pkl')
-activity_encoder = joblib.load('./models/activity_label_encoder.pkl')
 
 # Store the steps and user details
 step_data = {
@@ -22,24 +15,16 @@ step_data = {
 }
 
 
-# Use the machine learning model to classify the activity
-def classify_activity_ml(step_count, age, gender):
-    if age is None or gender is None:
-        return "Unknown"
-
-    # Create a DataFrame with the step count, age, and encoded gender
-    df = pd.DataFrame([[step_count, age, gender]], columns=['steps_10s', 'age', 'gender'])
-
-    # Encode the gender using the pre-trained encoder
-    df['gender'] = gender_encoder.transform([gender])[0]  # Encode gender as 0 (Female) or 1 (Male)
-
-    # Predict the activity using the pre-trained model
-    activity_pred = model.predict(df)[0]
-
-    # Decode the predicted activity back to its label
-    activity_label = activity_encoder.inverse_transform([activity_pred])[0]
-
-    return activity_label
+# Classification logic based on step count
+def classify_activity(step_count):
+    if step_count == 0:
+        return "Not Moving"
+    elif step_count <= 10:
+        return "Walking"
+    elif step_count <= 20:
+        return "Jogging"
+    else:
+        return "Running"
 
 
 @app.route('/')
@@ -62,12 +47,8 @@ def receive_step_data():
 
     # Check if 10 seconds have passed
     if time.time() - step_data["last_reset"] >= 10:
-        # Use the trained machine learning model to classify the activity
-        step_data["activity"] = classify_activity_ml(
-            step_data["total_steps_10s"],
-            step_data["age"],
-            step_data["gender"]
-        )
+        # Classify activity based on steps in the last 10 seconds
+        step_data["activity"] = classify_activity(step_data["total_steps_10s"])
 
         # Reset the 10-second interval for the next cycle
         step_data["total_steps_10s"] = 0
