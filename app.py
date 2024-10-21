@@ -3,7 +3,7 @@ import time
 
 app = Flask(__name__)
 
-# Store the steps and user details
+# Store the steps, user details, and WiFi status
 step_data = {
     "steps": 0,  # Current step count (received from ESP32)
     "total_steps_10s": 0,  # Steps in the current 10-second window (used for activity classification)
@@ -11,7 +11,8 @@ step_data = {
     "age": None,
     "gender": None,
     "activity": "Not Moving",
-    "last_reset": time.time()
+    "last_reset": time.time(),
+    "wifi_status": "Disconnected"  # WiFi status
 }
 
 
@@ -32,12 +33,16 @@ def index():
     return render_template('index.html')
 
 
-# Endpoint to receive step data from ESP32
+# Endpoint to receive step data from ESP32 (also includes WiFi status)
 @app.route('/api/step-data', methods=['POST'])
 def receive_step_data():
     global step_data
     data = request.json
     step_count = data.get("steps", 0)
+    wifi_status = data.get("wifi_status", "Disconnected")
+
+    # Update WiFi status
+    step_data["wifi_status"] = wifi_status
 
     # Accumulate total steps over time (without resetting)
     step_data["total_steps_overall"] += step_count
@@ -54,16 +59,17 @@ def receive_step_data():
         step_data["total_steps_10s"] = 0
         step_data["last_reset"] = time.time()
 
-    return jsonify({"message": "Step data received", "activity": step_data["activity"]}), 200
+    return jsonify({"message": "Step data received", "activity": step_data["activity"], "wifi_status": step_data["wifi_status"]}), 200
 
 
-# Endpoint to get the current activity and total step count (for frontend display)
+# Endpoint to get the current activity, total step count, and WiFi status (for frontend display)
 @app.route('/api/get-activity', methods=['GET'])
 def get_activity():
-    # Return the accumulated steps and current activity
+    # Return the accumulated steps, current activity, and WiFi status
     return jsonify({
-        "steps": step_data["total_steps_overall"],  # Show total accumulated steps
-        "activity": step_data["activity"]  # Show current activity
+        "steps": step_data["total_steps_overall"],
+        "activity": step_data["activity"],
+        "wifi_status": step_data["wifi_status"]
     })
 
 
