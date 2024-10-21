@@ -13,6 +13,7 @@
         <div class="info">
             <p>Step Count: <span id="stepCount">0</span></p>
             <p>Current Activity: <span id="activity">Not Moving</span></p>
+            <p>WiFi Status: <span id="wifiStatus">Disconnected</span></p>
         </div>
 
         <div class="user-input">
@@ -28,6 +29,36 @@
         </div>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script>
+        function fetchActivityData() {
+            fetch('/api/get-activity')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('stepCount').innerText = data.steps;
+                    document.getElementById('activity').innerText = data.activity;
+                    document.getElementById('wifiStatus').innerText = data.wifi_status;
+                })
+                .catch(error => console.error('Error fetching activity data:', error));
+        }
+
+        function submitUserDetails() {
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            
+            fetch('/api/user-details', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ age: age, gender: gender })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+            })
+            .catch(error => console.error('Error submitting user details:', error));
+        }
+
+        // Fetch activity data every 10 seconds
+        setInterval(fetchActivityData, 10000);
+    </script>
 </body>
 </html>
