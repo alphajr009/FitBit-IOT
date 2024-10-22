@@ -34,27 +34,47 @@
         client.on('message', function (topic, message) {
             try {
                 const payload = JSON.parse(message.toString());
+
+                // Update the step count
                 document.getElementById('stepCount').innerText = payload.steps || 0;
+
+                // Update the fall detection status
                 document.getElementById('fallDetected').innerText = payload.fall_detected ? "Yes" : "No";
-                document.getElementById('activity').innerText = payload.activity || "Not Moving";
+
+                // Calculate and update activity status based on steps
+                const steps = payload.steps || 0;
+                const activity = classifyActivity(steps);
+                document.getElementById('activity').innerText = activity;
+
             } catch (error) {
                 console.error('Error processing message:', error);
             }
         });
 
-        function fetchActivityData() {
-            fetch('/api/get-activity')
+        // Function to classify activity based on steps received
+        function classifyActivity(steps) {
+            if (steps === 0) {
+                return "Not Moving";
+            } else if (steps <= 10) {
+                return "Walking";
+            } else {
+                return "Running";
+            }
+        }
+
+        // Function to fetch daily steps from the backend
+        function fetchDailySteps() {
+            fetch('/api/get-daily-steps')
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('dailySteps').innerText = data.daily_steps || 0;
-                    document.getElementById('activity').innerText = data.activity || "Not Moving";
-                    document.getElementById('mqttStatus').innerText = data.mqtt_status;
                 })
-                .catch(error => console.error('Error fetching activity data:', error));
+                .catch(error => console.error('Error fetching daily steps:', error));
         }
 
-        setInterval(fetchActivityData, 10000);
-        fetchActivityData();
+        // Fetch daily steps every 10 seconds
+        setInterval(fetchDailySteps, 10000);
+        fetchDailySteps();
     </script>
 </body>
 </html>
