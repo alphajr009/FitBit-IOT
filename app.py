@@ -21,7 +21,7 @@ step_data = {
 
 # MQTT broker settings
 MQTT_BROKER = "5f474025409c4b7588c11fbc1c3dffcb.s1.eu.hivemq.cloud"
-MQTT_PORT = 8883
+MQTT_PORT = 8884
 MQTT_TOPIC = "esp32/stepcounter"
 MQTT_USER = "hivemq.webclient.1729593331255"
 MQTT_PASS = "QoS@.4Obqk983V,:xBKa"
