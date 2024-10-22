@@ -10,7 +10,7 @@ app = Flask(__name__)
 db_connection = mysql.connector.connect(
     host="auth-db1666.hstgr.io",  # Your MySQL database host
     user="u663312418_alpha",      # Your MySQL database username
-    password="Fitbit@mal!juki1234", # Your MySQL database password
+    password="tRbvr4;Tl2", # Your MySQL database password
     database="u663312418_fitbit"  # Your MySQL database name
 )
 db_cursor = db_connection.cursor()
