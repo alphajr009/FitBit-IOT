@@ -23,8 +23,8 @@ step_data = {
 MQTT_BROKER = "5f474025409c4b7588c11fbc1c3dffcb.s1.eu.hivemq.cloud"
 MQTT_PORT = 8883
 MQTT_TOPIC = "esp32/stepcounter"
-MQTT_USER = "alphawefit"
-MQTT_PASS = "Alpha@2024"
+MQTT_USER = "hivemq.webclient.1729593331255"
+MQTT_PASS = "QoS@.4Obqk983V,:xBKa"
 
 # Activity classification logic based on step count
 def classify_activity(step_count):
