@@ -5,39 +5,23 @@ import json
 
 app = Flask(__name__)
 
-# Store the steps, user details, fall detection, and WiFi status
+# Store the steps, user details, fall detection, and MQTT status
 step_data = {
-    "steps": 0,  # Current step count (received from ESP32 via MQTT)
-    "total_steps_10s": 0,  # Steps in the current 10-second window (for activity classification)
-    "total_steps_overall": 0,  # Total accumulated steps over time
-    "fall_detected": False,  # Fall detection status
-    "age": None,
-    "gender": None,
-    "activity": "Not Moving",
-    "wifi_status": "Disconnected",  # Default WiFi status
-    "mqtt_status": "Disconnected",  # MQTT connection status
+    "steps": 0,
+    "total_steps_10s": 0,
+    "total_steps_overall": 0,
+    "fall_detected": False,
+    "mqtt_status": "Disconnected",
     "last_reset": time.time()
 }
 
 # MQTT broker settings
 MQTT_BROKER = "5f474025409c4b7588c11fbc1c3dffcb.s1.eu.hivemq.cloud"
-MQTT_PORT = 8884
+MQTT_PORT = 8884  # WebSocket port
 MQTT_TOPIC = "esp32/stepcounter"
 MQTT_USER = "hivemq.webclient.1729593331255"
 MQTT_PASS = "QoS@.4Obqk983V,:xBKa"
 
-# Activity classification logic based on step count
-def classify_activity(step_count):
-    if step_count == 0:
-        return "Not Moving"
-    elif step_count <= 10:
-        return "Walking"
-    elif step_count <= 20:
-        return "Jogging"
-    else:
-        return "Running"
-
-# MQTT message handling function (called when a message is received)
 def on_message(client, userdata, message):
     global step_data
     print(f"Message received: {message.payload.decode()}")
@@ -50,31 +34,23 @@ def on_message(client, userdata, message):
         step_data["total_steps_overall"] += step_data["steps"]
         step_data["total_steps_10s"] += step_data["steps"]
 
-        # Check if 10 seconds have passed and classify activity
-        if time.time() - step_data["last_reset"] >= 10:
-            step_data["activity"] = classify_activity(step_data["total_steps_10s"])
-            step_data["total_steps_10s"] = 0
-            step_data["last_reset"] = time.time()
-
     except Exception as e:
         print(f"Error processing MQTT message: {e}")
 
-# MQTT connection handling
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected to MQTT Broker")
-        step_data["mqtt_status"] = "Connected"  # Update MQTT status immediately
+        step_data["mqtt_status"] = "Connected"
         client.subscribe(MQTT_TOPIC)
     else:
-        print("Failed to connect, return code %d\n", rc)
+        print(f"Failed to connect, return code {rc}")
 
-# Initialize the MQTT client and connect to the broker
 def mqtt_subscribe():
-    client = mqtt.Client()
+    client = mqtt.Client(transport="websockets")
     client.on_connect = on_connect
     client.on_message = on_message
     client.username_pw_set(MQTT_USER, MQTT_PASS)
-    client.tls_set()  # Enable SSL/TLS for secure connection
+    client.tls_set()
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     client.loop_start()
 
@@ -82,12 +58,10 @@ def mqtt_subscribe():
 def index():
     return render_template('index.html')
 
-# Endpoint to get the current activity, total step count, fall detection, and MQTT status
 @app.route('/api/get-activity', methods=['GET'])
 def get_activity():
     return jsonify({
         "steps": step_data["total_steps_overall"],
-        "activity": step_data["activity"],
         "fall_detected": step_data["fall_detected"],
         "mqtt_status": step_data["mqtt_status"]
     })
