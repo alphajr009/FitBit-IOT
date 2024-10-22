@@ -44,6 +44,7 @@ def classify_activity(step_count):
     else:
         return "Running"
 
+# Function to handle incoming MQTT messages
 def on_message(client, userdata, message):
     global step_data
     print(f"Message received: {message.payload.decode()}")
@@ -60,15 +61,21 @@ def on_message(client, userdata, message):
         step_data["total_steps_10s"] += step_data["steps"]
 
         # Insert step data into the existing steps_data table in MySQL
-        cursor.execute('''
-            INSERT INTO steps_data (steps, activity, fall_detected, timestamp) 
-            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
-        ''', (step_data["steps"], step_data["activity"], step_data["fall_detected"]))
-        db_connection.commit()
+        try:
+            cursor.execute('''
+                INSERT INTO steps_data (steps, activity, fall_detected, timestamp) 
+                VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            ''', (step_data["steps"], step_data["activity"], step_data["fall_detected"]))
+            db_connection.commit()
+            print(f"Inserted steps: {step_data['steps']}, activity: {step_data['activity']}, fall: {step_data['fall_detected']}")
+
+        except Exception as e:
+            print(f"Error inserting data into database: {e}")
 
     except Exception as e:
         print(f"Error processing MQTT message: {e}")
 
+# MQTT connection handling
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected to MQTT Broker")
@@ -77,6 +84,7 @@ def on_connect(client, userdata, flags, rc):
     else:
         print(f"Failed to connect, return code {rc}")
 
+# Initialize the MQTT client and subscribe to the topic
 def mqtt_subscribe():
     client = mqtt.Client(transport="websockets")
     client.on_connect = on_connect
@@ -103,14 +111,19 @@ def get_activity():
 # Endpoint to fetch daily step count from the existing steps_data table
 @app.route('/api/get-daily-steps', methods=['GET'])
 def get_daily_steps():
-    cursor.execute('''
-        SELECT SUM(steps) FROM steps_data WHERE DATE(timestamp) = CURDATE();
-    ''')
-    result = cursor.fetchone()
-    daily_steps = result[0] if result[0] is not None else 0
-    return jsonify({
-        "daily_steps": daily_steps
-    })
+    try:
+        cursor.execute('''
+            SELECT SUM(steps) FROM steps_data WHERE DATE(timestamp) = CURDATE();
+        ''')
+        result = cursor.fetchone()
+        daily_steps = result[0] if result[0] is not None else 0
+        print(f"Daily steps fetched: {daily_steps}")
+        return jsonify({
+            "daily_steps": daily_steps
+        })
+    except Exception as e:
+        print(f"Error fetching daily steps: {e}")
+        return jsonify({"error": "Failed to fetch daily steps"}), 500
 
 if __name__ == '__main__':
     mqtt_subscribe()
