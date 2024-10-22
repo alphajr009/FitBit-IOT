@@ -12,7 +12,6 @@
 
         <div class="info">
             <p>Step Count: <span id="stepCount">0</span></p>
-            <p>Current Activity: <span id="activity">Not Moving</span></p>
             <p>Fall Detected: <span id="fallDetected">No</span></p>
             <p>MQTT Status: <span id="mqttStatus">Disconnected</span></p>
         </div>
@@ -24,16 +23,14 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('stepCount').innerText = data.steps;
-                    document.getElementById('activity').innerText = data.activity;
                     document.getElementById('fallDetected').innerText = data.fall_detected ? "Yes" : "No";
                     document.getElementById('mqttStatus').innerText = data.mqtt_status;
                 })
                 .catch(error => console.error('Error fetching activity data:', error));
         }
 
-        // Fetch activity data every 10 seconds
         setInterval(fetchActivityData, 10000);
-        fetchActivityData();  // Initial call to populate the UI on load
+        fetchActivityData();
     </script>
 </body>
 </html>
