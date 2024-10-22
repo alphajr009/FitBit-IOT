@@ -63,7 +63,7 @@ def on_message(client, userdata, message):
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected to MQTT Broker")
-        step_data["mqtt_status"] = "Connected"
+        step_data["mqtt_status"] = "Connected"  # Update MQTT status immediately
         client.subscribe(MQTT_TOPIC)
     else:
         print("Failed to connect, return code %d\n", rc)
